@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Upload iXBRL — XBRL IE{% endblock %}
+{% block content %}
+<h2>Upload an iXBRL filing or ESEF Taxonomy Package</h2>
+<p class="muted">
+  Drop a single <code>.xhtml</code> / <code>.htm</code> iXBRL report
+  <strong>or</strong> an ESEF Taxonomy Package <code>.zip</code> (REC 2016-04-19).
+  We parse it end-to-end with the same Mode B pipeline used for SEC and ESEF
+  filings, then render facts at <code>/filings/upload-&lt;sha256[:12]&gt;/facts</code>.
+</p>
+<ul class="muted">
+  <li>Max size: <strong>{{ max_mb }} MB</strong>.</li>
+  <li>Per-IP rate: <strong>{{ rate_per_hour }}</strong> uploads / hour.</li>
+  <li>Retention: blobs and DB rows TTL-expire after <strong>{{ ttl_hours }} hours</strong>.</li>
+  <li>Arelle invoked with <code>workOffline=True</code> — your file cannot trigger outbound HTTP from the server.</li>
+</ul>
+
+<form action="/uploads" method="post" enctype="multipart/form-data" id="upload-form">
+  <label for="file" id="drop-label">
+    <strong>Click to choose</strong> or drag a file here
+    <span id="filename" class="muted"></span>
+  </label>
+  <input type="file" name="file" id="file" required
+         accept=".xhtml,.htm,.html,.zip,application/zip,application/xhtml+xml,text/html">
+  <button type="submit">Upload + parse</button>
+</form>
+
+<style>
+  #upload-form {
+    margin: 1rem 0;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  #drop-label {
+    display: inline-block;
+    padding: 1rem 1.5rem;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  #drop-label.dragging {
+    border-color: var(--accent);
+    color: var(--fg);
+  }
+  #file { display: none; }
+</style>
+
+<script>
+  const form = document.getElementById('upload-form');
+  const input = document.getElementById('file');
+  const label = document.getElementById('drop-label');
+  const name = document.getElementById('filename');
+  input.addEventListener('change', () => {
+    name.textContent = input.files[0] ? ' — ' + input.files[0].name : '';
+  });
+  ;['dragenter','dragover'].forEach(ev => label.addEventListener(ev, e => {
+    e.preventDefault(); label.classList.add('dragging');
+  }));
+  ;['dragleave','drop'].forEach(ev => label.addEventListener(ev, e => {
+    e.preventDefault(); label.classList.remove('dragging');
+  }));
+  label.addEventListener('drop', e => {
+    if (e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      name.textContent = ' — ' + e.dataTransfer.files[0].name;
+    }
+  });
+</script>
+
+{% if recent %}
+<h3>Recent uploads</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Accession</th>
+      <th>SHA-256</th>
+      <th>Original filename</th>
+      <th>Ingested</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in recent %}
+    <tr>
+      <td><a href="/filings/{{ f.accession_no }}/facts">{{ f.accession_no }}</a></td>
+      <td><code class="muted">{{ f.raw_sha256[:12] if f.raw_sha256 else "—" }}…</code></td>
+      <td>{{ f.ixbrl_url or "—" }}</td>
+      <td>{{ f.ingested_at.isoformat() if f.ingested_at else "—" }}</td>
+      <td><span class="badge">{{ f.ingestion_status }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

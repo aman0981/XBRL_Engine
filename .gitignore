@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+
+# Virtual env
+venv/
+.venv/
+
+# Test / type caches
+.pytest_cache/
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+tests/
+
+# Local data
+data/raw/
+data/taxonomies/
+data/arelle_cache/
+
+# Env / secrets
+.env
+.env.local
+
+# Logs
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+.claude/
+XBRL_PLAN.md

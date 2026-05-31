@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Restatements — {{ ticker or cik10 }}{% endblock %}
+{% block content %}
+<h2>Restatements — {{ ticker or cik10 }}</h2>
+<p class="muted">
+  Bitemporal diff across filings: same (concept, period, dimensions, unit) reported
+  with different values in a later filing. Precision-only changes are filtered out.
+  <br>
+  CIK <code>{{ cik10 }}</code>
+  &middot; <a href="/companies/{{ ticker or cik10 }}">Back to canonicals</a>
+</p>
+
+{% if not rows %}
+<p>No material restatements detected for this entity. Run <code>detect-restatements --ticker {{ ticker or cik10 }}</code> after ingesting facts.</p>
+{% else %}
+<table>
+  <thead>
+    <tr>
+      <th>Concept</th>
+      <th>Period</th>
+      <th class="num">Original value</th>
+      <th class="num">Restated value</th>
+      <th class="num">Delta</th>
+      <th class="num">Delta %</th>
+      <th>Originally reported</th>
+      <th>Restated reported</th>
+      <th>Flags</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><code>{{ r.concept_qname }}</code></td>
+      <td>
+        {% if r.period_instant %}@{{ r.period_instant }}
+        {% elif r.period_start and r.period_end %}{{ r.period_start }} → {{ r.period_end }}
+        {% else %}<span class="muted">—</span>{% endif %}
+      </td>
+      <td class="num">{{ "{:,}".format(r.original_value) }}</td>
+      <td class="num">{{ "{:,}".format(r.restated_value) }}</td>
+      <td class="num">
+        {% if r.delta is not none %}{{ "{:,}".format(r.delta) }}{% endif %}
+      </td>
+      <td class="num">
+        {% if r.delta_pct is not none %}{{ "{:+.4f}".format(r.delta_pct) }}%{% endif %}
+      </td>
+      <td>{{ r.original_reported_at or "—" }}</td>
+      <td>{{ r.restated_reported_at or "—" }}</td>
+      <td>
+        {% if r.is_amendment %}<span class="badge">amendment</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,50 @@
+# XBRL Intelligence Engine — runtime dependencies
+# Python 3.12 (container) / 3.13 (local venv)
+
+# Web framework
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+
+# Async DB
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.13.3
+
+# Settings / validation
+pydantic==2.9.2
+pydantic-settings==2.6.0
+
+# Logging / metrics
+structlog==24.4.0
+prometheus-client==0.21.0
+
+# HTTP client + rate limit + retries (SEC EDGAR)
+httpx==0.27.2
+aiolimiter==1.2.1
+tenacity==9.0.0
+
+# CLI
+typer==0.12.5
+click==8.1.7
+
+# Templates (HTMX UI in Phase 1.5+)
+jinja2==3.1.4
+
+# iXBRL parsing (Phase 2)
+lxml==5.3.0
+
+# Arelle XBRL-Certified Validating Processor (Phase 3)
+arelle-release==2.41.2
+
+# ESEF filing discovery (Phase 6)
+xbrl-filings-api==1.0
+
+# Multipart form parsing for /uploads (Phase 7.5)
+python-multipart==0.0.20
+
+# Dev / test
+pytest==8.3.3
+pytest-asyncio==0.24.0
+pytest-recording==0.13.2
+vcrpy==6.0.1
+hypothesis==6.115.5

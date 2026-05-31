@@ -1,0 +1,76 @@
+# XBRL Intelligence Engine — base compose.
+#
+# This file defines services + volumes + the network. It does NOT expose any
+# host ports — that's split into override files so production deploys can opt
+# in to whichever surface they actually need:
+#
+#   - docker-compose.override.yml   (auto-loaded by `docker compose up`)
+#       Dev convenience: expose Postgres on host:5432 and app on host:8000.
+#
+#   - docker-compose.prod.yml       (opt-in via `-f`)
+#       Prod hardening: only the app port is exposed, restart=always,
+#       JSON logs, no port 5432 leak.
+#
+# Secrets are read from `.env` (auto-loaded by Compose). See `.env.example`.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-xie}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-xie}
+      POSTGRES_DB: ${POSTGRES_DB:-xie}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "pg_isready -U ${POSTGRES_USER:-xie} -d ${POSTGRES_DB:-xie}"
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: xbrl-intelligence-engine:local
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      XIE_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-xie}:${POSTGRES_PASSWORD:-xie}@postgres:5432/${POSTGRES_DB:-xie}
+      XIE_LOG_JSON: "true"
+      XIE_ENV: docker
+      XIE_RAW_DATA_DIR: /data/raw
+      XIE_ARELLE_CACHE_DIR: /data/arelle_cache
+    volumes:
+      - xie_raw:/data/raw
+      - xie_arelle_cache:/data/arelle_cache
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/healthz"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    init: true
+    # why: deploy.resources only fires in Swarm mode; the top-level mem_limit
+    # is read by plain `docker compose up` too. Keep both so neither path is
+    # silently uncapped. Arelle DTS load peaks ~1 GB; budget 2 GB total.
+    mem_limit: 2g
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pgdata:
+  xie_raw:
+  xie_arelle_cache:

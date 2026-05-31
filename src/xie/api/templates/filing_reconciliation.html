@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ filing.accession_no }} reconciliation — XBRL IE{% endblock %}
+{% block content %}
+<h2>Mode A vs Mode B reconciliation</h2>
+<p class="muted">
+  Filing <code>{{ filing.accession_no }}</code>
+  &middot; <a href="/filings/{{ filing.accession_no }}/facts">Facts page</a>
+</p>
+
+<p>
+  Per-fact diff between SEC's pre-parsed <strong>companyfacts</strong> (Mode A) and our
+  lxml-extracted <strong>source iXBRL</strong> (Mode B). Each category exposes where the
+  two extractions disagree — usually Mode B captures dimensional / hidden / footnote facts
+  Mode A strips, but value_diff and precision_diff would surface real data-quality issues.
+</p>
+
+<table>
+  <thead><tr><th>Category</th><th class="num">Count</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge">only_in_a</span></td><td class="num">{{ "{:,}".format(summary.only_in_a) }}</td><td>SEC has it; our lxml didn't.</td></tr>
+    <tr><td><span class="badge">only_in_b</span></td><td class="num">{{ "{:,}".format(summary.only_in_b) }}</td><td>iXBRL has it; SEC's companyfacts drops it (hidden / dimensional / footnote).</td></tr>
+    <tr><td><span class="badge">value_diff</span></td><td class="num">{{ "{:,}".format(summary.value_diff) }}</td><td>Both sides have the fact; numeric values disagree.</td></tr>
+    <tr><td><span class="badge">precision_diff</span></td><td class="num">{{ "{:,}".format(summary.precision_diff) }}</td><td>Same value but different <code>decimals</code> attribute.</td></tr>
+  </tbody>
+</table>
+
+<h3>Findings (top 500)</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Concept</th>
+      <th>Period</th>
+      <th>Unit</th>
+      <th class="num">Mode A</th>
+      <th class="num">Mode B</th>
+      <th>A decimals</th>
+      <th>B decimals</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><span class="badge">{{ r.mismatch_type }}</span></td>
+      <td><code>{{ r.concept_qname }}</code></td>
+      <td>
+        {% if r.period_instant %}@{{ r.period_instant }}
+        {% elif r.period_start and r.period_end %}{{ r.period_start }} → {{ r.period_end }}
+        {% else %}<span class="muted">—</span>{% endif %}
+      </td>
+      <td>{{ r.unit_ref or "—" }}</td>
+      <td class="num">{% if r.companyfacts_value is not none %}{{ "{:,}".format(r.companyfacts_value) }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="num">{% if r.source_ixbrl_value is not none %}{{ "{:,}".format(r.source_ixbrl_value) }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td>{{ r.companyfacts_decimals_text or "—" }}</td>
+      <td>{{ r.source_decimals_text or "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ statement.role_definition or statement.role_uri }} — XBRL IE{% endblock %}
+{% block content %}
+<h2>{{ statement.role_definition or "Statement" }}</h2>
+<p class="muted">
+  Filing <code>{{ filing.accession_no }}</code>
+  &middot; ELR <code>{{ statement.role_uri }}</code>
+  &middot; <a href="/filings/{{ filing.accession_no }}/statements">All statements</a>
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Concept</th>
+      {% for col in statement.columns %}
+      <th class="num">{{ col.label }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in statement.rows %}
+    <tr>
+      <td style="padding-left: {{ row.depth * 1.5 + 0.5 }}rem">
+        {% if row.label %}{{ row.label }}{% else %}<code>{{ row.qname }}</code>{% endif %}
+        {% if row.balance_type %} <span class="badge muted">{{ row.balance_type }}</span>{% endif %}
+      </td>
+      {% for col in statement.columns %}
+      {% set v = row.values.get(col.context_id) %}
+      <td class="num">
+        {% if v and v.value_numeric is not none %}
+          {{ "{:,}".format(v.value_numeric) }}
+          {% if v.unit_ref %}<span class="muted"> {{ v.unit_ref }}</span>{% endif %}
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

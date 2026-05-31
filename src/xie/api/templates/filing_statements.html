@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ filing.accession_no }} statements — XBRL IE{% endblock %}
+{% block content %}
+<h2>Reconstructable statements — {{ filing.accession_no }}</h2>
+<p class="muted">
+  <a href="/filings/{{ filing.accession_no }}/facts">Facts</a> &middot;
+  <a href="/filings/{{ filing.accession_no }}/reconciliation">Reconciliation</a>
+</p>
+
+{% if roles %}
+<table>
+  <thead><tr><th>Statement (filer order)</th><th>Used on</th><th>ELR</th></tr></thead>
+  <tbody>
+    {% for r in roles %}
+    <tr>
+      <td><a href="/filings/{{ filing.accession_no }}/statements/{{ r.role_b64 }}">{{ r.definition or r.uri }}</a></td>
+      <td><span class="muted">{{ r.used_on }}</span></td>
+      <td><code class="muted">{{ r.uri }}</code></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No statement roles found for this filing. Run <code>enrich-filing</code> to populate role_definitions + presentation arcs.</p>
+{% endif %}
+{% endblock %}

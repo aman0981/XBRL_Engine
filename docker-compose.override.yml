@@ -1,0 +1,20 @@
+# Auto-loaded by `docker compose up` for local development.
+#
+# Exposes Postgres + app ports to the host so you can:
+#   - psql / your IDE connects to 127.0.0.1:5432
+#   - browser hits http://127.0.0.1:8000/
+#
+# In production, skip this file:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  app:
+    ports:
+      - "8000:8000"
+    environment:
+      XIE_LOG_JSON: "false"  # human-readable console renderer locally
+      XIE_ENV: dev

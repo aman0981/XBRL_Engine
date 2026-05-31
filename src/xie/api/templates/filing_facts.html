@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}{{ filing.accession_no }} facts — XBRL IE{% endblock %}
+{% block content %}
+<h2>Filing {{ filing.accession_no }}</h2>
+<p class="muted">
+  <span class="badge">{{ filing.regulator }}</span>
+  <span class="badge">{{ filing.form_type or "—" }}</span>
+  CIK {{ filing.entity_id }}{% if filing.ticker %} ({{ filing.ticker }}){% endif %}
+  &middot; Filed {{ filing.filing_date or "—" }}
+  &middot; Period {{ filing.period_of_report or "—" }}
+  &middot; Status <span class="badge">{{ filing.ingestion_status }}</span>
+  {% if filing.arelle_validation_status %}
+  &middot; Arelle <span class="badge">{{ filing.arelle_validation_status }}</span>
+  {% endif %}
+</p>
+
+{% if dqc.error or dqc.warning or dqc.info %}
+<h3>DQC / Arelle findings</h3>
+<table>
+  <thead><tr><th>Severity</th><th class="num">Count</th></tr></thead>
+  <tbody>
+    {% if dqc.error %}<tr><td><span class="badge">error</span></td><td class="num">{{ dqc.error }}</td></tr>{% endif %}
+    {% if dqc.warning %}<tr><td><span class="badge">warning</span></td><td class="num">{{ dqc.warning }}</td></tr>{% endif %}
+    {% if dqc.info %}<tr><td><span class="badge">info</span></td><td class="num">{{ dqc.info }}</td></tr>{% endif %}
+  </tbody>
+</table>
+{% endif %}
+
+<h3>Fact counts</h3>
+<table>
+  <thead>
+    <tr><th>Source</th><th class="num">Count</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Mode A (companyfacts)</td><td class="num">{{ "{:,}".format(counts.companyfacts) }}</td></tr>
+    <tr><td>Mode B (source iXBRL)</td><td class="num">{{ "{:,}".format(counts.source_ixbrl) }}</td></tr>
+    <tr><td>&nbsp;&nbsp;&nbsp;of which hidden (ix:hidden)</td><td class="num">{{ "{:,}".format(counts.hidden) }}</td></tr>
+    <tr><td>&nbsp;&nbsp;&nbsp;of which dimensional</td><td class="num">{{ "{:,}".format(counts.dimensional) }}</td></tr>
+  </tbody>
+</table>
+
+<p>
+  <a href="?source=companyfacts&limit={{ limit }}">Mode A</a>
+  &middot; <a href="?source=source_ixbrl&limit={{ limit }}">Mode B</a>
+  &middot; <a href="?source=source_ixbrl&hidden=true&limit={{ limit }}">Hidden only</a>
+  &middot; <a href="/filings/{{ filing.accession_no }}/reconciliation">Reconciliation</a>
+</p>
+
+<h3>Facts — {{ source }}{% if hidden is not none %} (hidden={{ hidden }}){% endif %} <span class="muted">(showing {{ facts|length }} of up to {{ limit }})</span></h3>
+<table>
+  <thead>
+    <tr>
+      <th>Concept (qname)</th>
+      <th>Label / type</th>
+      <th>Period</th>
+      <th>Unit</th>
+      <th class="num">Value</th>
+      <th>Decimals</th>
+      <th>Format</th>
+      <th>Flags</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in facts %}
+    <tr>
+      <td><code>{{ f.concept_qname }}</code></td>
+      <td>
+        {% if f.standard_label %}
+          {{ f.standard_label }}
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+        {% if f.period_type %} <span class="badge">{{ f.period_type }}</span>{% endif %}
+        {% if f.balance_type %} <span class="badge">{{ f.balance_type }}</span>{% endif %}
+      </td>
+      <td>
+        {% if f.period_instant %}
+          @{{ f.period_instant }}
+        {% elif f.period_start and f.period_end %}
+          {{ f.period_start }} → {{ f.period_end }}
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>{{ f.unit_ref or "—" }}</td>
+      <td class="num">
+        {% if f.value_numeric is not none %}
+          {{ "{:,}".format(f.value_numeric) }}
+        {% elif f.value_text %}
+          <span class="muted">[text]</span>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>{{ f.decimals_text or "—" }}</td>
+      <td>
+        {% if f.format_qname %}<code>{{ f.format_qname }}</code>{% endif %}
+        {% if f.transform_registry %} <span class="badge">{{ f.transform_registry }}</span>{% endif %}
+      </td>
+      <td>
+        {% if f.is_hidden %}<span class="badge">hidden</span>{% endif %}
+        {% if f.is_dimensional %}<span class="badge">dim</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

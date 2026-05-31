@@ -1,0 +1,36 @@
+.git
+.gitignore
+.github
+.idea
+.vscode
+.pytest_cache
+.mypy_cache
+.ruff_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Local venv (we install fresh in the image)
+venv/
+.venv/
+
+# Local-only data (the image must not bake in 25K facts of AAPL etc.)
+data/raw/
+data/arelle_cache/
+data/taxonomies/
+
+# Test artifacts
+.coverage
+htmlcov/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# Docs not needed in the image
+*.md
+!README.md
+XBRL_PLAN.md
+.claude/

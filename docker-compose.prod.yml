@@ -1,0 +1,21 @@
+# Production overlay. Opt in via:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# - Postgres has no host port mapping (DB never reachable off the docker network).
+# - App bound to localhost:8000 only; a reverse proxy (Caddy/Traefik) on the
+#   host forwards 80/443 -> 127.0.0.1:8000. This way the app is never directly
+#   exposed to the public internet.
+# - Restart policy upgraded to `always` so the unit survives docker daemon restarts.
+
+services:
+  postgres:
+    restart: always
+    # No `ports:` block — DB is reachable only through the compose network.
+
+  app:
+    restart: always
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      XIE_ENV: production
+      XIE_LOG_JSON: "true"

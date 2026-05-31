@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}XBRL Intelligence Engine{% endblock %}</title>
+  <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --fg: #c9d1d9;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --border: #30363d;
+      --row-alt: #161b22;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.5;
+    }
+    header {
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    header h1 { margin: 0; font-size: 1.2rem; }
+    header h1 a { color: var(--fg); text-decoration: none; }
+    main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+    h2 { margin-top: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1rem 0;
+      font-variant-numeric: tabular-nums;
+    }
+    th, td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    th { background: var(--row-alt); font-weight: 600; }
+    td.num { text-align: right; }
+    tbody tr:hover { background: var(--row-alt); }
+    .badge {
+      display: inline-block;
+      padding: 0.1rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.8rem;
+      background: var(--border);
+      color: var(--fg);
+    }
+    .muted { color: var(--muted); }
+    form input[type=text] {
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--fg);
+      border-radius: 3px;
+    }
+    button {
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #0d1117;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><a href="/">XBRL Intelligence Engine</a></h1>
+    <form action="/companies/lookup" method="get">
+      <input type="text" name="ticker" placeholder="Ticker e.g. AAPL" required>
+      <button type="submit">Go</button>
+    </form>
+    <a href="/uploads" style="margin-left:auto;color:var(--accent);text-decoration:none">Upload iXBRL ↑</a>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
