@@ -1,57 +1,63 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon %}
 {% block title %}Restatements — {{ ticker or cik10 }}{% endblock %}
 {% block content %}
-<h2>Restatements — {{ ticker or cik10 }}</h2>
-<p class="muted">
-  Bitemporal diff across filings: same (concept, period, dimensions, unit) reported
-  with different values in a later filing. Precision-only changes are filtered out.
-  <br>
-  CIK <code>{{ cik10 }}</code>
-  &middot; <a href="/companies/{{ ticker or cik10 }}">Back to canonicals</a>
-</p>
+<div class="page-head">
+  <h2>Restatements — {{ ticker or cik10 }}</h2>
+  <div class="subtle-bar">
+    <span>CIK <code>{{ cik10 }}</code></span>
+    <span class="sep">·</span>
+    <a href="/companies/{{ ticker or cik10 }}">{{ icon("trending", 16) }} Back to canonicals</a>
+  </div>
+</div>
+
+<div class="callout glass">
+  {{ icon("history", 18) }}
+  <span>Bitemporal diff across filings: the same <em>(concept, period, dimensions, unit)</em> reported with a different value in a later filing. Precision-only changes are filtered out.</span>
+</div>
 
 {% if not rows %}
-<p>No material restatements detected for this entity. Run <code>detect-restatements --ticker {{ ticker or cik10 }}</code> after ingesting facts.</p>
+<div class="empty glass">
+  {{ icon("history", 40) }}
+  <h3>No material restatements detected</h3>
+  <p class="muted">Run <code>detect-restatements --ticker {{ ticker or cik10 }}</code> after ingesting facts.</p>
+</div>
 {% else %}
-<table>
-  <thead>
-    <tr>
-      <th>Concept</th>
-      <th>Period</th>
-      <th class="num">Original value</th>
-      <th class="num">Restated value</th>
-      <th class="num">Delta</th>
-      <th class="num">Delta %</th>
-      <th>Originally reported</th>
-      <th>Restated reported</th>
-      <th>Flags</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for r in rows %}
-    <tr>
-      <td><code>{{ r.concept_qname }}</code></td>
-      <td>
-        {% if r.period_instant %}@{{ r.period_instant }}
-        {% elif r.period_start and r.period_end %}{{ r.period_start }} → {{ r.period_end }}
-        {% else %}<span class="muted">—</span>{% endif %}
-      </td>
-      <td class="num">{{ "{:,}".format(r.original_value) }}</td>
-      <td class="num">{{ "{:,}".format(r.restated_value) }}</td>
-      <td class="num">
-        {% if r.delta is not none %}{{ "{:,}".format(r.delta) }}{% endif %}
-      </td>
-      <td class="num">
-        {% if r.delta_pct is not none %}{{ "{:+.4f}".format(r.delta_pct) }}%{% endif %}
-      </td>
-      <td>{{ r.original_reported_at or "—" }}</td>
-      <td>{{ r.restated_reported_at or "—" }}</td>
-      <td>
-        {% if r.is_amendment %}<span class="badge">amendment</span>{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="table-wrap">
+  <table class="data sortable">
+    <thead>
+      <tr>
+        <th>Concept</th><th>Period</th>
+        <th class="num">Original</th><th class="num">Restated</th>
+        <th class="num">Delta</th><th class="num">Delta %</th>
+        <th>Originally reported</th><th>Restated reported</th><th data-no-sort>Flags</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td><code>{{ r.concept_qname }}</code></td>
+        <td class="num">
+          {% if r.period_instant %}@{{ r.period_instant }}
+          {% elif r.period_start and r.period_end %}{{ r.period_start }} → {{ r.period_end }}
+          {% else %}<span class="faint">—</span>{% endif %}
+        </td>
+        <td class="num">{{ "{:,}".format(r.original_value) }}</td>
+        <td class="num">{{ "{:,}".format(r.restated_value) }}</td>
+        <td class="num">{% if r.delta is not none %}{{ "{:,}".format(r.delta) }}{% endif %}</td>
+        <td class="num">
+          {% if r.delta_pct is not none %}
+            {% set up = r.delta_pct >= 0 %}
+            <span class="delta {{ 'up' if up else 'down' }}"><span class="arrow" aria-hidden="true">{{ '▲' if up else '▼' }}</span>{{ "{:+.4f}%".format(r.delta_pct) }}</span>
+          {% endif %}
+        </td>
+        <td class="num">{{ r.original_reported_at or "—" }}</td>
+        <td class="num">{{ r.restated_reported_at or "—" }}</td>
+        <td>{% if r.is_amendment %}<span class="badge warn">amendment</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,131 @@
+/* XBRL Intelligence Engine — design tokens, fonts, reset, glass primitives.
+   Refined Glassmorphism: glass = chrome only; data tables stay solid. */
+
+/* ---- Fonts (self-hosted, no external CDN at runtime) ---- */
+@font-face{font-family:"Fira Sans";font-style:normal;font-weight:400;font-display:swap;src:url("/static/fonts/fira-sans-latin-400-normal.woff2") format("woff2");}
+@font-face{font-family:"Fira Sans";font-style:normal;font-weight:500;font-display:swap;src:url("/static/fonts/fira-sans-latin-500-normal.woff2") format("woff2");}
+@font-face{font-family:"Fira Sans";font-style:normal;font-weight:600;font-display:swap;src:url("/static/fonts/fira-sans-latin-600-normal.woff2") format("woff2");}
+@font-face{font-family:"Fira Sans";font-style:normal;font-weight:700;font-display:swap;src:url("/static/fonts/fira-sans-latin-700-normal.woff2") format("woff2");}
+@font-face{font-family:"Fira Code";font-style:normal;font-weight:400;font-display:swap;src:url("/static/fonts/fira-code-latin-400-normal.woff2") format("woff2");}
+@font-face{font-family:"Fira Code";font-style:normal;font-weight:500;font-display:swap;src:url("/static/fonts/fira-code-latin-500-normal.woff2") format("woff2");}
+@font-face{font-family:"Fira Code";font-style:normal;font-weight:600;font-display:swap;src:url("/static/fonts/fira-code-latin-600-normal.woff2") format("woff2");}
+
+:root{
+  /* surfaces */
+  --bg:#020617;
+  --bg-2:#060B1A;
+  --bg-panel:#0E1223;
+  --surface:rgba(255,255,255,.04);
+  --surface-2:rgba(255,255,255,.06);
+
+  /* glass (chrome only) */
+  --glass-bg:rgba(14,18,35,.62);
+  --glass-border:rgba(255,255,255,.09);
+  --glass-blur:blur(16px) saturate(140%);
+
+  /* text */
+  --fg:#F8FAFC;
+  --fg-strong:#FFFFFF;
+  --muted:#94A3B8;
+  --faint:#64748B;
+
+  /* lines */
+  --border:#1E2A3F;
+  --border-strong:#334155;
+
+  /* brand + status */
+  --accent:#22C55E;
+  --accent-strong:#16A34A;
+  --accent-soft:rgba(34,197,94,.14);
+  --on-accent:#04130A;
+  --pos:#22C55E;
+  --neg:#F87171;
+  --warn:#F59E0B;
+  --info:#60A5FA;
+
+  /* radii */
+  --r-sm:8px; --r:12px; --r-lg:16px; --r-xl:24px; --r-pill:999px;
+
+  /* spacing scale (4-8) */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s6:24px; --s8:32px; --s12:48px;
+
+  /* elevation */
+  --shadow-1:0 1px 2px rgba(0,0,0,.4);
+  --shadow-2:0 8px 24px rgba(0,0,0,.45);
+  --shadow-glass:0 16px 40px rgba(2,6,23,.55);
+
+  /* motion */
+  --ease:cubic-bezier(.16,1,.3,1);
+  --dur:200ms;
+
+  /* type */
+  --font-sans:"Fira Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --font-mono:"Fira Code",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+
+  --maxw:1240px;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(34,197,94,.06), transparent 60%),
+    radial-gradient(900px 500px at -10% 0%, rgba(59,130,246,.06), transparent 55%),
+    var(--bg);
+  color:var(--fg);
+  font-family:var(--font-sans);
+  font-size:16px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  min-height:100dvh;
+}
+
+h1,h2,h3,h4{color:var(--fg-strong);font-weight:600;line-height:1.25;letter-spacing:-.01em;}
+h2{font-size:1.5rem;margin:0 0 var(--s4);}
+h3{font-size:1.125rem;margin:var(--s8) 0 var(--s3);}
+p{margin:0 0 var(--s4);}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+small{font-size:.8125rem;}
+
+/* numeric + code use mono with tabular figures */
+code,kbd,samp{font-family:var(--font-mono);font-size:.86em;}
+code{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:.06em .4em;
+  color:#CBD5E1;
+  font-variant-numeric:tabular-nums;
+  word-break:break-word;
+}
+.num,td.num,th.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+
+.muted{color:var(--muted);}
+.faint{color:var(--faint);}
+
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+
+/* ---- glass primitive (chrome only) ---- */
+.glass{
+  background:var(--glass-bg);
+  border:1px solid var(--glass-border);
+  -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass{background:var(--bg-panel);}
+}
+@media (prefers-reduced-transparency:reduce){
+  .glass{background:var(--bg-panel);-webkit-backdrop-filter:none;backdrop-filter:none;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
+}
+
+/* skip link */
+.skip-link{position:absolute;left:-999px;top:8px;z-index:1000;background:var(--accent);color:var(--on-accent);padding:8px 14px;border-radius:var(--r-sm);font-weight:600;}
+.skip-link:focus{left:8px;text-decoration:none;}

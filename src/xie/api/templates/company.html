@@ -1,73 +1,118 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon %}
 {% block title %}{{ ticker or cik10 }} — XBRL IE{% endblock %}
 {% block content %}
-<h2>{{ entity_name or ticker or cik10 }}</h2>
-<p class="muted">
-  {% if regulator == 'ESEF' %}LEI{% else %}CIK{% endif %}
-  <code>{{ cik10 }}</code>{% if ticker %} &middot; Ticker <code>{{ ticker }}</code>{% endif %}
-  &middot; <span class="badge">{{ regulator }}</span>
-  {% if regulator == 'SEC' %}&middot; <span class="badge">Mode A + Mode B</span>{% else %}&middot; <span class="badge">Mode B (source iXBRL)</span>{% endif %}
-  &middot; <a href="/companies/{{ ticker or cik10 }}/restatements">Restatements</a>
-</p>
+<div class="page-head">
+  <h2>{{ entity_name or ticker or cik10 }}</h2>
+  <div class="subtle-bar">
+    <span>{% if regulator == 'ESEF' %}LEI{% else %}CIK{% endif %} <code>{{ cik10 }}</code></span>
+    {% if ticker %}<span class="sep">·</span><span>Ticker <code>{{ ticker }}</code></span>{% endif %}
+    <span class="sep">·</span><span class="badge accent">{{ regulator }}</span>
+    {% if regulator == 'SEC' %}<span class="badge">Mode A + Mode B</span>{% else %}<span class="badge">Mode B (source iXBRL)</span>{% endif %}
+    <span class="sep">·</span>
+    <a href="/companies/{{ ticker or cik10 }}/restatements">{{ icon("history", 16) }} Restatements</a>
+  </div>
+</div>
 
 {% if rows %}
+{# ---- KPI bento (glass = chrome layer) ---- #}
+<div class="bento" aria-label="Key financial metrics">
+  {% for k in kpis %}
+  <div class="kpi glass col-4">
+    <span class="label">{{ k.name }}</span>
+    <span class="value">{{ k.value_display }}</span>
+    <span class="meta">
+      {% if k.fy %}{{ k.fy }}{% endif %}
+      {% if k.yoy is not none %}
+        {% set up = k.yoy >= 0 %}
+        <span class="sep">·</span>
+        <span class="delta {{ 'up' if up else 'down' }}" title="Year-over-year"><span class="arrow" aria-hidden="true">{{ '▲' if up else '▼' }}</span>{{ "{:+.1f}%".format(k.yoy) }}</span>
+      {% endif %}
+    </span>
+    {% if k.spark|length > 1 %}
+    <div class="spark" data-chart="spark" data-series="spark-{{ loop.index }}" role="img" aria-label="{{ k.name }} trend sparkline"></div>
+    <script type="application/json" id="spark-{{ loop.index }}">{{ {"values": k.spark}|tojson }}</script>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{# ---- time-series chart (currency canonicals; table below is the a11y source) ---- #}
+{% if chart.series %}
+<div class="chart-card glass" style="margin-top:var(--s6)">
+  <div class="card-title"><h3>{{ icon("trending", 18) }} Canonical financials — {{ chart.categories|length }}-year trend</h3></div>
+  <div class="chart-host" data-chart="area" data-series="company-chart" data-height="340" role="img" aria-label="{{ chart.aria }}"></div>
+  <script type="application/json" id="company-chart">{{ chart|tojson }}</script>
+</div>
+{% endif %}
+
 <h3>Canonical financial time-series</h3>
-<table>
-  <thead>
-    <tr>
-      <th>Canonical</th>
-      {% for period in periods %}
-      <th class="num">{{ period }}</th>
+<p class="tbl-meta">{{ icon("info", 15) }} Annual filings (form 10-K). Figures in the filing's reporting currency.</p>
+<div class="table-wrap">
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Canonical</th>
+        {% for period in periods %}<th class="num">{{ period }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for canonical_name, values in rows.items() %}
+      <tr>
+        <td>{{ canonical_name }}</td>
+        {% for period in periods %}
+          {% set v = values.get(period) %}
+          <td class="num">{% if v is not none %}{{ "{:,.0f}".format(v) }}{% else %}<span class="faint">—</span>{% endif %}</td>
+        {% endfor %}
+      </tr>
       {% endfor %}
-    </tr>
-  </thead>
-  <tbody>
-    {% for canonical_name, values in rows.items() %}
-    <tr>
-      <td>{{ canonical_name }}</td>
-      {% for period in periods %}
-        {% set v = values.get(period) %}
-        <td class="num">
-          {% if v is not none %}
-            {{ "{:,.0f}".format(v) }}
-          {% else %}
-            <span class="muted">&mdash;</span>
-          {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<h3>Mapping provenance</h3>
+<p class="tbl-meta">{{ icon("info", 15) }} Source concept and confidence for each canonical line item.</p>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Canonical</th><th>Source qname</th><th>Method</th><th>Confidence</th></tr></thead>
+    <tbody>
+      {% for canonical_name, meta in mapping_meta.items() %}
+      <tr>
+        <td>{{ canonical_name }}</td>
+        <td><code>{{ meta.source_concept_qname or "—" }}</code></td>
+        <td>{% if meta.mapping_method %}<span class="badge">{{ meta.mapping_method }}</span>{% else %}<span class="faint">—</span>{% endif %}</td>
+        <td>
+          {% if meta.mapping_confidence is not none %}
+          <div class="chips">
+            <span class="meter" aria-hidden="true"><span style="width: {{ (meta.mapping_confidence * 100)|round(0, 'floor') }}%"></span></span>
+            <span class="num muted">{{ meta.mapping_confidence }}</span>
+          </div>
+          {% else %}<span class="faint">—</span>{% endif %}
         </td>
+      </tr>
       {% endfor %}
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-<p class="muted">
-  Annual filings (form 10-K) shown. Source concept and mapping confidence:
-</p>
-<table>
-  <thead><tr><th>Canonical</th><th>Source qname</th><th>Method</th><th>Confidence</th></tr></thead>
-  <tbody>
-    {% for canonical_name, meta in mapping_meta.items() %}
-    <tr>
-      <td>{{ canonical_name }}</td>
-      <td><code>{{ meta.source_concept_qname or "—" }}</code></td>
-      <td><span class="badge">{{ meta.mapping_method or "—" }}</span></td>
-      <td>{{ meta.mapping_confidence or "—" }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+    </tbody>
+  </table>
+</div>
+
 {% else %}
 {% if request.query_params.get("ingesting") %}
-<p>
-  Ingestion in progress in the background. Refresh in ~20 s.
-</p>
+<div class="empty glass">
+  {{ icon("database", 40) }}
+  <h3>Ingestion in progress</h3>
+  <p class="muted">Mode A bootstrap is running in the background. Refresh in ~20 seconds.</p>
+  <a class="btn btn-ghost" href="/companies/{{ ticker or cik10 }}">{{ icon("history", 18) }} Refresh</a>
+</div>
 {% else %}
-<p>No canonical line items found for this entity yet.</p>
-<form method="post" action="/companies/{{ ticker or cik10 }}/ingest">
-  <button type="submit">Ingest now (Mode A on-demand)</button>
-</form>
-<p class="muted">
-  Or run the CLI: <code>python -m xie.ingest.cli bootstrap-companyfacts --ticker {{ ticker or "AAPL" }}</code>
-</p>
+<div class="empty glass">
+  {{ icon("search", 40) }}
+  <h3>No canonical line items yet</h3>
+  <p class="muted">This entity isn't in the database. Run an on-demand Mode A bootstrap from SEC companyfacts.</p>
+  <form method="post" action="/companies/{{ ticker or cik10 }}/ingest">
+    <button class="btn btn-accent" type="submit">{{ icon("database", 18) }} Ingest now (Mode A)</button>
+  </form>
+  <p class="faint" style="margin-top:var(--s4)">Or via CLI: <code>python -m xie.ingest.cli bootstrap-companyfacts --ticker {{ ticker or "AAPL" }}</code></p>
+</div>
 {% endif %}
 {% endif %}
 {% endblock %}

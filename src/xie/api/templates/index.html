@@ -1,6 +1,57 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon %}
 {% block content %}
-<h2>XBRL Intelligence Engine</h2>
-<p class="muted">Consumption-side XBRL analytics for SEC EDGAR + ESMA ESEF filings.</p>
-<p>Search a ticker above (e.g. <a href="/companies/AAPL">AAPL</a>, <a href="/companies/MSFT">MSFT</a>) or open <a href="/docs">API docs</a>.</p>
+<section class="hero">
+  <h1>XBRL Intelligence Engine</h1>
+  <p class="lede">
+    Consumption-side analytics for SEC EDGAR (US) &amp; ESMA ESEF (EU) filings —
+    parsed, normalized, reconciled. Canonical financials, filer-order statements,
+    and bitemporal restatement detection from raw iXBRL.
+  </p>
+  <form class="search" action="/companies/lookup" method="get" role="search">
+    <label class="skip-link" for="hero-search">Ticker</label>
+    <input type="search" id="hero-search" name="ticker" placeholder="Ticker, CIK, or LEI — e.g. AAPL" required>
+    <button class="btn btn-accent" type="submit">{{ icon("search", 18) }} Analyze</button>
+  </form>
+  <div class="chips hero-chips">
+    <span class="faint">Try:</span>
+    <a class="badge" href="/companies/AAPL">AAPL</a>
+    <a class="badge" href="/companies/MSFT">MSFT</a>
+    <a class="badge" href="/companies/NVDA">NVDA</a>
+    <a class="badge" href="/companies/969500Y4IJGHJE2MTJ13">Hermès (ESEF)</a>
+  </div>
+</section>
+
+<div class="bento" style="margin-top:var(--s8)">
+  <a class="feature-card glass col-4" href="/companies/AAPL">
+    {{ icon("trending", 22) }}
+    <h3>Canonical financials</h3>
+    <p>Revenue, Net Income, Total Assets, Operating Cash Flow &amp; EPS as a 5-year time-series, mapped through US-GAAP / IFRS fallback chains.</p>
+  </a>
+  <a class="feature-card glass col-4" href="/uploads">
+    {{ icon("compare", 22) }}
+    <h3>Fact fidelity — Mode A vs B</h3>
+    <p>SEC's pre-parsed companyfacts diffed fact-by-fact against our own lxml iXBRL extraction — every divergence surfaced.</p>
+  </a>
+  <a class="feature-card glass col-4" href="/companies/AAPL/restatements">
+    {{ icon("history", 22) }}
+    <h3>Restatement detection</h3>
+    <p>Bitemporal, dimension- and precision-aware diff across filings — catches stock splits, reclassifications &amp; amendments.</p>
+  </a>
+  <a class="feature-card glass col-4" href="/companies/AAPL">
+    {{ icon("layers", 22) }}
+    <h3>Statement reconstruction</h3>
+    <p>Primary statements rebuilt in the filer's own presentation order from the Arelle-resolved presentation linkbase.</p>
+  </a>
+  <a class="feature-card glass col-4" href="/uploads">
+    {{ icon("upload", 22) }}
+    <h3>Upload any iXBRL</h3>
+    <p>Drop an iXBRL report or an ESEF taxonomy package — the same pipeline parses it and renders the full analysis.</p>
+  </a>
+  <a class="feature-card glass col-4" href="/docs">
+    {{ icon("database", 22) }}
+    <h3>SEC + ESEF + JSON API</h3>
+    <p>Multi-jurisdiction ingest with a documented OpenAPI surface. Public, read-only, no account required.</p>
+  </a>
+</div>
 {% endblock %}

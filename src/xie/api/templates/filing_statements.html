@@ -1,26 +1,38 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon %}
 {% block title %}{{ filing.accession_no }} statements — XBRL IE{% endblock %}
 {% block content %}
-<h2>Reconstructable statements — {{ filing.accession_no }}</h2>
-<p class="muted">
-  <a href="/filings/{{ filing.accession_no }}/facts">Facts</a> &middot;
-  <a href="/filings/{{ filing.accession_no }}/reconciliation">Reconciliation</a>
-</p>
+<div class="page-head">
+  <h2>Reconstructable statements</h2>
+  <div class="subtle-bar">
+    <span>Filing <code>{{ filing.accession_no }}</code></span>
+    <span class="sep">·</span>
+    <a href="/filings/{{ filing.accession_no }}/facts">{{ icon("table", 16) }} Facts</a>
+    <a href="/filings/{{ filing.accession_no }}/reconciliation">{{ icon("compare", 16) }} Reconciliation</a>
+  </div>
+</div>
 
 {% if roles %}
-<table>
-  <thead><tr><th>Statement (filer order)</th><th>Used on</th><th>ELR</th></tr></thead>
-  <tbody>
-    {% for r in roles %}
-    <tr>
-      <td><a href="/filings/{{ filing.accession_no }}/statements/{{ r.role_b64 }}">{{ r.definition or r.uri }}</a></td>
-      <td><span class="muted">{{ r.used_on }}</span></td>
-      <td><code class="muted">{{ r.uri }}</code></td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<p class="tbl-meta">{{ icon("layers", 15) }} Primary statements rebuilt from the filer's presentation linkbase, in filer order.</p>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Statement (filer order)</th><th>Used on</th><th>ELR</th></tr></thead>
+    <tbody>
+      {% for r in roles %}
+      <tr>
+        <td><a href="/filings/{{ filing.accession_no }}/statements/{{ r.role_b64 }}">{{ icon("arrow-right", 14) }} {{ r.definition or r.uri }}</a></td>
+        <td>{% if r.used_on %}<span class="badge muted">{{ r.used_on }}</span>{% else %}<span class="faint">—</span>{% endif %}</td>
+        <td><code class="muted">{{ r.uri }}</code></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
-<p>No statement roles found for this filing. Run <code>enrich-filing</code> to populate role_definitions + presentation arcs.</p>
+<div class="empty glass">
+  {{ icon("layers", 40) }}
+  <h3>No statement roles found</h3>
+  <p class="muted">Run <code>enrich-filing</code> to populate role_definitions + presentation arcs for this filing.</p>
+</div>
 {% endif %}
 {% endblock %}

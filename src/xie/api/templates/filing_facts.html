@@ -1,108 +1,83 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon %}
 {% block title %}{{ filing.accession_no }} facts — XBRL IE{% endblock %}
 {% block content %}
-<h2>Filing {{ filing.accession_no }}</h2>
-<p class="muted">
-  <span class="badge">{{ filing.regulator }}</span>
-  <span class="badge">{{ filing.form_type or "—" }}</span>
-  CIK {{ filing.entity_id }}{% if filing.ticker %} ({{ filing.ticker }}){% endif %}
-  &middot; Filed {{ filing.filing_date or "—" }}
-  &middot; Period {{ filing.period_of_report or "—" }}
-  &middot; Status <span class="badge">{{ filing.ingestion_status }}</span>
-  {% if filing.arelle_validation_status %}
-  &middot; Arelle <span class="badge">{{ filing.arelle_validation_status }}</span>
-  {% endif %}
-</p>
+<div class="page-head">
+  <h2>Filing <code>{{ filing.accession_no }}</code></h2>
+  <div class="subtle-bar">
+    <span class="badge accent">{{ filing.regulator }}</span>
+    <span class="badge">{{ filing.form_type or "—" }}</span>
+    <span>CIK {{ filing.entity_id }}{% if filing.ticker %} ({{ filing.ticker }}){% endif %}</span>
+    <span class="sep">·</span><span>Filed {{ filing.filing_date or "—" }}</span>
+    <span class="sep">·</span><span>Period {{ filing.period_of_report or "—" }}</span>
+    <span class="sep">·</span><span class="badge">{{ filing.ingestion_status }}</span>
+    {% if filing.arelle_validation_status %}<span class="badge info">{{ icon("shield", 13) }} Arelle: {{ filing.arelle_validation_status }}</span>{% endif %}
+  </div>
+</div>
 
-{% if dqc.error or dqc.warning or dqc.info %}
-<h3>DQC / Arelle findings</h3>
-<table>
-  <thead><tr><th>Severity</th><th class="num">Count</th></tr></thead>
-  <tbody>
-    {% if dqc.error %}<tr><td><span class="badge">error</span></td><td class="num">{{ dqc.error }}</td></tr>{% endif %}
-    {% if dqc.warning %}<tr><td><span class="badge">warning</span></td><td class="num">{{ dqc.warning }}</td></tr>{% endif %}
-    {% if dqc.info %}<tr><td><span class="badge">info</span></td><td class="num">{{ dqc.info }}</td></tr>{% endif %}
-  </tbody>
-</table>
-{% endif %}
+<div class="statchips">
+  <div class="statchip"><div class="n num">{{ "{:,}".format(counts.companyfacts) }}</div><div class="k">{{ icon("database", 14) }} Mode A · companyfacts</div></div>
+  <div class="statchip"><div class="n num">{{ "{:,}".format(counts.source_ixbrl) }}</div><div class="k">{{ icon("file", 14) }} Mode B · source iXBRL</div></div>
+  <div class="statchip"><div class="n num">{{ "{:,}".format(counts.hidden) }}</div><div class="k">{{ icon("info", 14) }} hidden (ix:hidden)</div></div>
+  <div class="statchip"><div class="n num">{{ "{:,}".format(counts.dimensional) }}</div><div class="k">{{ icon("layers", 14) }} dimensional</div></div>
+  {% if dqc.error %}<div class="statchip err"><div class="n num">{{ dqc.error }}</div><div class="k">{{ icon("alert", 14) }} DQC errors</div></div>{% endif %}
+  {% if dqc.warning %}<div class="statchip warn"><div class="n num">{{ dqc.warning }}</div><div class="k">{{ icon("alert", 14) }} DQC warnings</div></div>{% endif %}
+  {% if dqc.info %}<div class="statchip"><div class="n num">{{ dqc.info }}</div><div class="k">{{ icon("info", 14) }} DQC info</div></div>{% endif %}
+</div>
 
-<h3>Fact counts</h3>
-<table>
-  <thead>
-    <tr><th>Source</th><th class="num">Count</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>Mode A (companyfacts)</td><td class="num">{{ "{:,}".format(counts.companyfacts) }}</td></tr>
-    <tr><td>Mode B (source iXBRL)</td><td class="num">{{ "{:,}".format(counts.source_ixbrl) }}</td></tr>
-    <tr><td>&nbsp;&nbsp;&nbsp;of which hidden (ix:hidden)</td><td class="num">{{ "{:,}".format(counts.hidden) }}</td></tr>
-    <tr><td>&nbsp;&nbsp;&nbsp;of which dimensional</td><td class="num">{{ "{:,}".format(counts.dimensional) }}</td></tr>
-  </tbody>
-</table>
+<div class="chips" style="margin:var(--s6) 0 var(--s2);justify-content:space-between">
+  <div class="segmented glass" role="tablist" aria-label="Fact source">
+    {% set is_a = source == 'companyfacts' %}
+    {% set is_hidden = hidden %}
+    {% set is_b = source == 'source_ixbrl' and not hidden %}
+    <a class="{{ 'active' if is_a }}" href="?source=companyfacts&limit={{ limit }}"
+       hx-get="?source=companyfacts&limit={{ limit }}" hx-target="#facts-region" hx-select="#facts-region" hx-swap="outerHTML" hx-push-url="true">Mode A</a>
+    <a class="{{ 'active' if is_b }}" href="?source=source_ixbrl&limit={{ limit }}"
+       hx-get="?source=source_ixbrl&limit={{ limit }}" hx-target="#facts-region" hx-select="#facts-region" hx-swap="outerHTML" hx-push-url="true">Mode B</a>
+    <a class="{{ 'active' if is_hidden }}" href="?source=source_ixbrl&hidden=true&limit={{ limit }}"
+       hx-get="?source=source_ixbrl&hidden=true&limit={{ limit }}" hx-target="#facts-region" hx-select="#facts-region" hx-swap="outerHTML" hx-push-url="true">Hidden only</a>
+  </div>
+  <a class="btn btn-ghost" href="/filings/{{ filing.accession_no }}/reconciliation">{{ icon("compare", 18) }} Reconciliation</a>
+</div>
 
-<p>
-  <a href="?source=companyfacts&limit={{ limit }}">Mode A</a>
-  &middot; <a href="?source=source_ixbrl&limit={{ limit }}">Mode B</a>
-  &middot; <a href="?source=source_ixbrl&hidden=true&limit={{ limit }}">Hidden only</a>
-  &middot; <a href="/filings/{{ filing.accession_no }}/reconciliation">Reconciliation</a>
-</p>
-
-<h3>Facts — {{ source }}{% if hidden is not none %} (hidden={{ hidden }}){% endif %} <span class="muted">(showing {{ facts|length }} of up to {{ limit }})</span></h3>
-<table>
-  <thead>
-    <tr>
-      <th>Concept (qname)</th>
-      <th>Label / type</th>
-      <th>Period</th>
-      <th>Unit</th>
-      <th class="num">Value</th>
-      <th>Decimals</th>
-      <th>Format</th>
-      <th>Flags</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for f in facts %}
-    <tr>
-      <td><code>{{ f.concept_qname }}</code></td>
-      <td>
-        {% if f.standard_label %}
-          {{ f.standard_label }}
-        {% else %}
-          <span class="muted">—</span>
-        {% endif %}
-        {% if f.period_type %} <span class="badge">{{ f.period_type }}</span>{% endif %}
-        {% if f.balance_type %} <span class="badge">{{ f.balance_type }}</span>{% endif %}
-      </td>
-      <td>
-        {% if f.period_instant %}
-          @{{ f.period_instant }}
-        {% elif f.period_start and f.period_end %}
-          {{ f.period_start }} → {{ f.period_end }}
-        {% else %}
-          <span class="muted">—</span>
-        {% endif %}
-      </td>
-      <td>{{ f.unit_ref or "—" }}</td>
-      <td class="num">
-        {% if f.value_numeric is not none %}
-          {{ "{:,}".format(f.value_numeric) }}
-        {% elif f.value_text %}
-          <span class="muted">[text]</span>
-        {% else %}
-          <span class="muted">—</span>
-        {% endif %}
-      </td>
-      <td>{{ f.decimals_text or "—" }}</td>
-      <td>
-        {% if f.format_qname %}<code>{{ f.format_qname }}</code>{% endif %}
-        {% if f.transform_registry %} <span class="badge">{{ f.transform_registry }}</span>{% endif %}
-      </td>
-      <td>
-        {% if f.is_hidden %}<span class="badge">hidden</span>{% endif %}
-        {% if f.is_dimensional %}<span class="badge">dim</span>{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div id="facts-region" aria-live="polite">
+  <p class="tbl-meta">{{ icon("table", 15) }} Facts — <strong>{{ source }}</strong>{% if hidden is not none %} · hidden={{ hidden }}{% endif %} <span class="faint">(showing {{ facts|length }} of up to {{ limit }})</span></p>
+  <div class="table-wrap">
+    <table class="data sortable">
+      <thead>
+        <tr>
+          <th>Concept (qname)</th><th>Label / type</th><th>Period</th>
+          <th>Unit</th><th class="num">Value</th><th data-no-sort>Decimals</th>
+          <th data-no-sort>Format</th><th data-no-sort>Flags</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in facts %}
+        <tr{% if f.is_hidden %} style="background:rgba(245,158,11,.05)"{% elif f.is_dimensional %} style="background:rgba(96,165,250,.04)"{% endif %}>
+          <td><code>{{ f.concept_qname }}</code></td>
+          <td>
+            {% if f.standard_label %}{{ f.standard_label }}{% else %}<span class="faint">—</span>{% endif %}
+            {% if f.period_type %} <span class="badge muted">{{ f.period_type }}</span>{% endif %}
+            {% if f.balance_type %} <span class="badge muted">{{ f.balance_type }}</span>{% endif %}
+          </td>
+          <td class="num">
+            {% if f.period_instant %}@{{ f.period_instant }}
+            {% elif f.period_start and f.period_end %}{{ f.period_start }} → {{ f.period_end }}
+            {% else %}<span class="faint">—</span>{% endif %}
+          </td>
+          <td>{{ f.unit_ref or "—" }}</td>
+          <td class="num" {% if f.value_numeric is not none %}data-sort="{{ f.value_numeric }}"{% endif %}>
+            {% if f.value_numeric is not none %}{{ "{:,}".format(f.value_numeric) }}
+            {% elif f.value_text %}<span class="faint">[text]</span>
+            {% else %}<span class="faint">—</span>{% endif %}
+          </td>
+          <td class="num">{{ f.decimals_text or "—" }}</td>
+          <td>{% if f.format_qname %}<code>{{ f.format_qname }}</code>{% endif %}{% if f.transform_registry %} <span class="badge muted">{{ f.transform_registry }}</span>{% endif %}</td>
+          <td>{% if f.is_hidden %}<span class="badge warn">hidden</span>{% endif %}{% if f.is_dimensional %}<span class="badge info">dim</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

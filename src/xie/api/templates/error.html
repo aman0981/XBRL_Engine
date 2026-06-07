@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}{{ status }} — XBRL IE{% endblock %}
+{% block content %}
+<div class="error-card glass">
+  {{ icon("alert", 44) }}
+  <div class="code">{{ status }}</div>
+  <h3>{{ heading }}</h3>
+  <p class="muted">{{ detail }}</p>
+  <a class="btn btn-accent" href="/">{{ icon("home", 18) }} Back home</a>
+</div>
+{% endblock %}

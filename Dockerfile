@@ -38,6 +38,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:${PATH}" \
     PYTHONPATH=/app/src \
+    # why: the non-root `xie` user is created --no-create-home, so $HOME would
+    # default to /home/xie (absent + unwritable). Arelle probes $HOME for its
+    # user-config dir during DTS load and crashes with PermissionError. Point
+    # HOME at the xie-owned /data so `enrich-filing` works in-container. The
+    # expensive taxonomy cache still goes to XIE_ARELLE_CACHE_DIR below.
+    HOME=/data \
     XIE_RAW_DATA_DIR=/data/raw \
     XIE_ARELLE_CACHE_DIR=/data/arelle_cache \
     XIE_LOG_JSON=true

@@ -48,6 +48,7 @@ async def company(
     entity_name = await _entity_name(session, cik10)
     canonical_rows = await _annual_canonical(session, cik10, regulator)
     rows, periods, mapping_meta = _shape_for_template(canonical_rows)
+    chart, kpis = _company_viz(rows, periods, mapping_meta)
     return templates.TemplateResponse(
         request,
         "company.html",
@@ -59,6 +60,8 @@ async def company(
             "rows": rows,
             "periods": periods,
             "mapping_meta": mapping_meta,
+            "chart": chart,
+            "kpis": kpis,
         },
     )
 
@@ -241,8 +244,97 @@ def _shape_for_template(
 
 
 def _period_label(row: dict) -> str:
-    if row["period_end"]:
-        return f"FY{row['fiscal_year']} ({row['period_end'].isoformat()})"
-    if row["period_instant"]:
-        return f"FY{row['fiscal_year']} (@{row['period_instant'].isoformat()})"
+    """Bucket a canonical row by the fiscal year of its OWN period.
+
+    why: companyfacts canonical rows carry the *source filing's* fiscal_year, so
+    a single 10-K's comparatives all share one fiscal_year (e.g. 2025). Labelling
+    by that value collapses every column to "FY2025" and splits instant (balance
+    sheet) from duration (flow) facts into separate columns. Deriving the year
+    from the period date instead yields distinct, correct columns and groups the
+    flow + stock figures of the same year together.
+    """
+    period_date = row["period_end"] or row["period_instant"]
+    if period_date:
+        return f"FY{period_date.year}"
     return f"FY{row['fiscal_year']}"
+
+
+# Display labels for KPI cards / chart legend (enum values are PascalCase).
+_DISPLAY_NAMES = {
+    "Revenue": "Revenue",
+    "NetIncome": "Net Income",
+    "TotalAssets": "Total Assets",
+    "OperatingCashFlow": "Operating Cash Flow",
+    "EPS": "EPS (diluted)",
+}
+# EPS is per-share (~1e0) and would be invisible on a currency axis (~1e11);
+# it keeps its KPI card + sparkline but is excluded from the shared line chart.
+_CHART_EXCLUDE = {"EPS"}
+
+
+def _short_label(label: str | None) -> str | None:
+    """'FY2024 (2024-09-28)' -> 'FY2024'."""
+    return label.split(" (")[0] if label else label
+
+
+def _to_float(value) -> float | None:
+    return float(value) if value is not None else None
+
+
+def _compact(n: float | None) -> str:
+    """Human-readable magnitude: 416_161_000_000 -> '416.16 B'."""
+    if n is None:
+        return "—"
+    a = abs(n)
+    for div, suf in ((1e12, " T"), (1e9, " B"), (1e6, " M"), (1e3, " K")):
+        if a >= div:
+            return f"{n / div:,.2f}{suf}"
+    return f"{n:,.2f}"
+
+
+def _company_viz(
+    rows: dict[str, dict], periods: list[str], mapping_meta: dict[str, dict]
+) -> tuple[dict, list[dict]]:
+    """Build chart series + KPI cards from the already-capped pivot.
+
+    Iterates ONLY over `periods` (capped to 5 by _shape_for_template) so the
+    page never surfaces more than the 5 most-recent fiscal years.
+    """
+    ascending = list(reversed(periods))  # chart x-axis oldest -> newest
+    categories = [_short_label(p) for p in ascending]
+    series: list[dict] = []
+    kpis: list[dict] = []
+    for name, values in rows.items():
+        data = [_to_float(values.get(p)) for p in ascending]
+        if not any(v is not None for v in data):
+            continue
+        if name not in _CHART_EXCLUDE:
+            series.append({"name": _DISPLAY_NAMES.get(name, name), "data": data})
+        latest = latest_label = prev = None
+        for p in periods:  # newest-first
+            v = _to_float(values.get(p))
+            if v is None:
+                continue
+            if latest is None:
+                latest, latest_label = v, p
+            elif prev is None:
+                prev = v
+                break
+        yoy = ((latest - prev) / abs(prev) * 100) if (latest is not None and prev) else None
+        kpis.append(
+            {
+                "name": _DISPLAY_NAMES.get(name, name),
+                "value": latest,
+                "value_display": _compact(latest),
+                "fy": _short_label(latest_label),
+                "yoy": yoy,
+                "spark": [v for v in data if v is not None],
+                "method": mapping_meta.get(name, {}).get("mapping_method"),
+            }
+        )
+    chart = {
+        "categories": categories,
+        "series": series,
+        "aria": "Canonical financial values by fiscal year",
+    }
+    return chart, kpis
