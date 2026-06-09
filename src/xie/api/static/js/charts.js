@@ -1,14 +1,23 @@
 /* XBRL Intelligence Engine — ApexCharts builders (progressive enhancement).
    Charts read data from an inline <script type="application/json"> tag, so the
    page is fully usable (tables) even if this script or ApexCharts fails to load.
-   Glass is chrome only; charts render on solid panels with high-contrast ink. */
+   Glass is chrome only; charts render on solid panels with high-contrast ink.
+   Colors are read from CSS tokens so charts track the Aurora theme. */
 (function () {
   "use strict";
   if (typeof ApexCharts === "undefined") return;
 
   var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var INK = "#94A3B8", GRID = "rgba(255,255,255,.07)", ACCENT = "#22C55E";
-  var SERIES_COLORS = ["#22C55E", "#60A5FA", "#F59E0B", "#A78BFA", "#F87171"];
+  function cssVar(name, fb) {
+    try { var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fb; }
+    catch (e) { return fb; }
+  }
+  var INK = cssVar("--muted", "#94A3B8");
+  var GRID = "rgba(255,255,255,.07)";
+  var ACCENT = cssVar("--accent-text", "#A5B4FC");  // light indigo — primary series, reads on dark
+  var GLOW = cssVar("--brand-glow", "#8B5CF6");      // violet
+  // colorblind-aided categorical scale (paired with DASHES); semantic pos/neg stay green/red
+  var SERIES_COLORS = [ACCENT, "#60A5FA", GLOW, "#34D399", "#FBBF24", "#F472B6"];
   var DASHES = [0, 4, 2, 6, 3]; // distinguish series without relying on color
 
   function fmtFull(n) {
@@ -43,11 +52,12 @@
   function timeSeries(host, d) {
     var opts = merge(baseTheme, {
       chart: merge(baseTheme.chart, { type: "area", height: host.dataset.height || 320,
-        zoom: { enabled: false } }),
+        zoom: { enabled: false },
+        dropShadow: { enabled: !REDUCED, top: 6, left: 0, blur: 10, opacity: 0.22, color: ACCENT } }),
       series: d.series,
       colors: SERIES_COLORS,
       stroke: { curve: "smooth", width: 2.5, dashArray: d.series.map(function (_, i) { return DASHES[i % DASHES.length]; }) },
-      fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.22, opacityTo: 0.02, stops: [0, 95] } },
+      fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.30, opacityTo: 0.02, stops: [0, 95] } },
       dataLabels: { enabled: false },
       markers: { size: 3, strokeWidth: 0, hover: { size: 5 } },
       xaxis: { categories: d.categories, axisBorder: { color: GRID }, axisTicks: { color: GRID },
@@ -76,13 +86,16 @@
 
   function spark(host, d) {
     var pos = d.values.length < 2 || d.values[d.values.length - 1] >= d.values[0];
+    var col = pos ? cssVar("--pos", "#22C55E") : cssVar("--neg", "#F87171");
     return {
       chart: { type: "area", height: 40, sparkline: { enabled: true }, background: "transparent",
                animations: { enabled: !REDUCED } },
       series: [{ name: d.name || "", data: d.values }],
-      colors: [pos ? "#22C55E" : "#F87171"],
+      colors: [col],
       stroke: { curve: "smooth", width: 2 },
-      fill: { type: "gradient", gradient: { opacityFrom: 0.35, opacityTo: 0 } },
+      fill: { type: "gradient", gradient: { opacityFrom: 0.40, opacityTo: 0 } },
+      markers: { size: 0, discrete: [{ seriesIndex: 0, dataPointIndex: d.values.length - 1,
+        fillColor: col, strokeColor: col, size: 3 }] },
       tooltip: { enabled: false }
     };
   }

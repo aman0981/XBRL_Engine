@@ -1,7 +1,26 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon %}
+{% block head %}
+<script>
+/* Lazy WebGL hero loader — landing only. Inject hero3d.js ONLY if the device
+   can afford it; otherwise the CSS poster stands in. Zero bytes on other pages. */
+(function(){try{
+  var m=window.matchMedia;
+  if(m&&(m("(prefers-reduced-motion: reduce)").matches||m("(prefers-reduced-transparency: reduce)").matches))return;
+  if(m&&!m("(pointer: fine)").matches)return;
+  if((navigator.deviceMemory||8)<4)return;
+  var c=navigator.connection;
+  if(c&&(c.saveData||/(^|-)(slow-2g|2g|3g)$/.test(c.effectiveType||"")))return;
+  var t=document.createElement("canvas");
+  if(!(t.getContext("webgl")||t.getContext("experimental-webgl")))return;
+  var s=document.createElement("script");s.src="/static/js/hero3d.js";s.defer=true;
+  document.head.appendChild(s);
+}catch(e){}})();
+</script>
+{% endblock %}
 {% block content %}
 <section class="hero">
+  <canvas class="hero-canvas" id="hero-canvas" aria-hidden="true"></canvas>
   <h1>XBRL Intelligence Engine</h1>
   <p class="lede">
     Consumption-side analytics for SEC EDGAR (US) &amp; ESMA ESEF (EU) filings —
@@ -22,33 +41,33 @@
   </div>
 </section>
 
-<div class="bento" style="margin-top:var(--s8)">
-  <a class="feature-card glass col-4" href="/companies/AAPL">
+<div class="bento scene" style="margin-top:var(--s8)">
+  <a class="feature-card glass col-4" data-tilt href="/companies/AAPL">
     {{ icon("trending", 22) }}
     <h3>Canonical financials</h3>
     <p>Revenue, Net Income, Total Assets, Operating Cash Flow &amp; EPS as a 5-year time-series, mapped through US-GAAP / IFRS fallback chains.</p>
   </a>
-  <a class="feature-card glass col-4" href="/uploads">
+  <a class="feature-card glass col-4" data-tilt href="/uploads">
     {{ icon("compare", 22) }}
     <h3>Fact fidelity — Mode A vs B</h3>
     <p>SEC's pre-parsed companyfacts diffed fact-by-fact against our own lxml iXBRL extraction — every divergence surfaced.</p>
   </a>
-  <a class="feature-card glass col-4" href="/companies/AAPL/restatements">
+  <a class="feature-card glass col-4" data-tilt href="/companies/AAPL/restatements">
     {{ icon("history", 22) }}
     <h3>Restatement detection</h3>
     <p>Bitemporal, dimension- and precision-aware diff across filings — catches stock splits, reclassifications &amp; amendments.</p>
   </a>
-  <a class="feature-card glass col-4" href="/companies/AAPL">
+  <a class="feature-card glass col-4" data-tilt href="/companies/AAPL">
     {{ icon("layers", 22) }}
     <h3>Statement reconstruction</h3>
     <p>Primary statements rebuilt in the filer's own presentation order from the Arelle-resolved presentation linkbase.</p>
   </a>
-  <a class="feature-card glass col-4" href="/uploads">
+  <a class="feature-card glass col-4" data-tilt href="/uploads">
     {{ icon("upload", 22) }}
     <h3>Upload any iXBRL</h3>
     <p>Drop an iXBRL report or an ESEF taxonomy package — the same pipeline parses it and renders the full analysis.</p>
   </a>
-  <a class="feature-card glass col-4" href="/docs">
+  <a class="feature-card glass col-4" data-tilt href="/docs">
     {{ icon("database", 22) }}
     <h3>SEC + ESEF + JSON API</h3>
     <p>Multi-jurisdiction ingest with a documented OpenAPI surface. Public, read-only, no account required.</p>

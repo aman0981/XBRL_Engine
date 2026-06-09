@@ -18,3 +18,8 @@ services:
     environment:
       XIE_LOG_JSON: "false"  # human-readable console renderer locally
       XIE_ENV: dev
+    # Dev-only: live-mount front-end assets so CSS/JS/template edits show on
+    # refresh without an image rebuild. Read-only; Python code stays baked.
+    volumes:
+      - ./src/xie/api/static:/app/src/xie/api/static:ro
+      - ./src/xie/api/templates:/app/src/xie/api/templates:ro

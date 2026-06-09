@@ -6,6 +6,7 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.gzip import GZipMiddleware
 
 from xie.api.endpoints import companies, filings, health, metrics, uploads
 from xie.core.config import settings
@@ -34,6 +35,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+# Compress CSS/JS/HTML on the wire (~70% smaller). Safe with the existing ETag
+# revalidation; no effect on the dev asset bind-mount.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 

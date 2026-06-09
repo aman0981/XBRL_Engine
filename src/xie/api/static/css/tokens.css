@@ -1,5 +1,6 @@
 /* XBRL Intelligence Engine — design tokens, fonts, reset, glass primitives.
-   Refined Glassmorphism: glass = chrome only; data tables stay solid. */
+   Refined Glassmorphism: glass = chrome only; data tables stay solid.
+   Palette = "Aurora": indigo/violet = brand & atmosphere; green/red = data semantics. */
 
 /* ---- Fonts (self-hosted, no external CDN at runtime) ---- */
 @font-face{font-family:"Fira Sans";font-style:normal;font-weight:400;font-display:swap;src:url("/static/fonts/fira-sans-latin-400-normal.woff2") format("woff2");}
@@ -22,6 +23,8 @@
   --glass-bg:rgba(14,18,35,.62);
   --glass-border:rgba(255,255,255,.09);
   --glass-blur:blur(16px) saturate(140%);
+  --glass-blur-lg:blur(22px) saturate(155%);          /* hero/header only */
+  --glass-sheen:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0) 42%);
 
   /* text */
   --fg:#F8FAFC;
@@ -33,11 +36,15 @@
   --border:#1E2A3F;
   --border-strong:#334155;
 
-  /* brand + status */
-  --accent:#22C55E;
-  --accent-strong:#16A34A;
-  --accent-soft:rgba(34,197,94,.14);
-  --on-accent:#04130A;
+  /* brand (indigo/violet) — chrome only */
+  --accent:#4F46E5;            /* brand indigo: buttons, active states, fills (AA w/ white text) */
+  --accent-strong:#4338CA;     /* darker hover */
+  --accent-soft:rgba(99,102,241,.16);
+  --accent-text:#A5B4FC;       /* light indigo for links/icons/sort/focus on dark (≈9:1) */
+  --on-accent:#FFFFFF;
+  --brand-glow:#8B5CF6;        /* violet glow — hero + accents only */
+
+  /* data semantics (KEPT green/red/amber/blue) */
   --pos:#22C55E;
   --neg:#F87171;
   --warn:#F59E0B;
@@ -52,7 +59,20 @@
   /* elevation */
   --shadow-1:0 1px 2px rgba(0,0,0,.4);
   --shadow-2:0 8px 24px rgba(0,0,0,.45);
-  --shadow-glass:0 16px 40px rgba(2,6,23,.55);
+  --elev-1:0 1px 2px rgba(0,0,0,.4),0 2px 8px rgba(2,6,23,.35);
+  --elev-2:0 2px 4px rgba(0,0,0,.4),0 12px 32px rgba(2,6,23,.5);
+  --elev-3:0 6px 12px rgba(0,0,0,.45),0 28px 64px rgba(2,6,23,.62);
+  --rim:inset 0 1px 0 rgba(255,255,255,.06);          /* lit top edge */
+  --glow-accent:0 0 0 1px var(--accent-soft),0 10px 34px rgba(99,102,241,.28);
+  --shadow-glass:var(--elev-2),var(--rim);            /* recomposed → all glass cards gain depth */
+
+  /* 3D / depth (tokenized so it is globally tunable + killable) */
+  --persp:1000px; --tilt-max:6deg; --lift:6px; --parallax:14px;
+
+  /* ambient mesh (indigo/violet brand + faint emerald) */
+  --mesh-1:rgba(99,102,241,.12);
+  --mesh-2:rgba(139,92,246,.09);
+  --mesh-3:rgba(34,197,94,.05);
 
   /* motion */
   --ease:cubic-bezier(.16,1,.3,1);
@@ -67,13 +87,10 @@
 }
 
 *,*::before,*::after{box-sizing:border-box;}
-html{-webkit-text-size-adjust:100%;}
+html{-webkit-text-size-adjust:100%;overflow-x:clip;}
 body{
   margin:0;
-  background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(34,197,94,.06), transparent 60%),
-    radial-gradient(900px 500px at -10% 0%, rgba(59,130,246,.06), transparent 55%),
-    var(--bg);
+  background:var(--bg);
   color:var(--fg);
   font-family:var(--font-sans);
   font-size:16px;
@@ -83,11 +100,27 @@ body{
   min-height:100dvh;
 }
 
+/* ambient depth field — one fixed, composited, pointer-inert layer behind all content */
+body::before{
+  content:"";
+  position:fixed;inset:-12%;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(42vw 42vw at 18% 10%, var(--mesh-1), transparent 60%),
+    radial-gradient(48vw 48vw at 84% 6%, var(--mesh-2), transparent 62%),
+    radial-gradient(52vw 52vw at 62% 104%, var(--mesh-3), transparent 66%);
+  animation:ambient-drift 40s var(--ease) infinite alternate;
+  will-change:transform;
+}
+@keyframes ambient-drift{
+  from{transform:translate3d(-2%,-1%,0) scale(1.02);}
+  to{transform:translate3d(2%,2%,0) scale(1.08);}
+}
+
 h1,h2,h3,h4{color:var(--fg-strong);font-weight:600;line-height:1.25;letter-spacing:-.01em;}
 h2{font-size:1.5rem;margin:0 0 var(--s4);}
 h3{font-size:1.125rem;margin:var(--s8) 0 var(--s3);}
 p{margin:0 0 var(--s4);}
-a{color:var(--accent);text-decoration:none;}
+a{color:var(--accent-text);text-decoration:none;}
 a:hover{text-decoration:underline;}
 small{font-size:.8125rem;}
 
@@ -107,7 +140,7 @@ code{
 .muted{color:var(--muted);}
 .faint{color:var(--faint);}
 
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;border-radius:4px;}
 
 /* ---- glass primitive (chrome only) ---- */
 .glass{
@@ -121,9 +154,11 @@ code{
 }
 @media (prefers-reduced-transparency:reduce){
   .glass{background:var(--bg-panel);-webkit-backdrop-filter:none;backdrop-filter:none;}
+  body::before{display:none;}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
+  :root{--tilt-max:0deg;--lift:0px;--parallax:0px;}
 }
 
 /* skip link */

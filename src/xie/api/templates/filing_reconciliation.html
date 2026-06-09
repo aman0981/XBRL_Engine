@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon %}
 {% block title %}{{ filing.accession_no }} reconciliation — XBRL IE{% endblock %}
+{% block scripts %}
+<script src="/static/js/apexcharts.min.js" defer></script>
+<script src="/static/js/charts.js" defer></script>
+{% endblock %}
 {% block content %}
 <div class="page-head">
   <h2>Mode A vs Mode B reconciliation</h2>

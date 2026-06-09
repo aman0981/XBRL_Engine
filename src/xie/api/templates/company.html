@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon %}
 {% block title %}{{ ticker or cik10 }} — XBRL IE{% endblock %}
+{% block scripts %}
+<script src="/static/js/apexcharts.min.js" defer></script>
+<script src="/static/js/charts.js" defer></script>
+{% endblock %}
 {% block content %}
 <div class="page-head">
   <h2>{{ entity_name or ticker or cik10 }}</h2>
@@ -18,7 +22,7 @@
 {# ---- KPI bento (glass = chrome layer) ---- #}
 <div class="bento" aria-label="Key financial metrics">
   {% for k in kpis %}
-  <div class="kpi glass col-4">
+  <div class="kpi glass lift col-4">
     <span class="label">{{ k.name }}</span>
     <span class="value">{{ k.value_display }}</span>
     <span class="meta">

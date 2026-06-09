@@ -10,9 +10,9 @@
   <link rel="stylesheet" href="/static/css/tokens.css">
   <link rel="stylesheet" href="/static/css/app.css">
   <script src="/static/js/htmx.min.js" defer></script>
-  <script src="/static/js/apexcharts.min.js" defer></script>
-  <script src="/static/js/charts.js" defer></script>
   <script src="/static/js/ui.js" defer></script>
+  {# ApexCharts (~574KB) loads ONLY on chart pages via {% block scripts %} — not on landing/facts/statements/etc. #}
+  {% block scripts %}{% endblock %}
   {% block head %}{% endblock %}
 </head>
 <body>
